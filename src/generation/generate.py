@@ -21,10 +21,10 @@ def main(
 		
 	else:
 		tokenizer = AutoTokenizer.from_pretrained(
-			os.path.join(ckpt_dir, model_name),
+			f"meta-llama/{model_name}",
 			cache_dir=os.path.join(ckpt_dir, model_name),
-			trust_remote_code=True,
-			local_files_only=True
+			trust_remote_code=True
+			#local_files_only=True
 		)
 
 		max_memory = {}
@@ -34,9 +34,9 @@ def main(
 			max_memory[i] = f"{total_mem_gib:.0f}GiB"
 
 		model = AutoModelForCausalLM.from_pretrained(
-			os.path.join(ckpt_dir, model_name),
+			f"meta-llama/{model_name}",
 			cache_dir=os.path.join(ckpt_dir, model_name),
-			local_files_only=True,
+			#local_files_only=True,
 			device_map="auto",
 			trust_remote_code=True,
 			torch_dtype=torch.bfloat16,

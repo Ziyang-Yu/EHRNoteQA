@@ -56,7 +56,7 @@ def main(
         df.at[index, eval_col] = result
         df.to_csv(os.path.join(save_path, file_name), index=False)
         time.sleep(0.15)
-
+        #break
 
 if __name__ == "__main__":
 	fire.Fire(main)

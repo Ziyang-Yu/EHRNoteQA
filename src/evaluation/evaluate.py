@@ -23,6 +23,11 @@ def main(
     df[eval_col] = None
 
     for index, row in tqdm(df.iterrows()):
+        
+
+        # delete when full train
+        if index == 100:
+            break
 
         output = row[model_name]
 

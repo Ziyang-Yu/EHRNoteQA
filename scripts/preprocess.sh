@@ -1,4 +1,4 @@
 python ../src/preprocessing/preprocess.py \
---ehrnoteqa ../data/ \
---mimiciv ../data/ \
---output ../data/
+--ehrnoteqa ../data \
+--mimiciv ../data \
+--output ../data

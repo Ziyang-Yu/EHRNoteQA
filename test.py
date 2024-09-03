@@ -10,4 +10,4 @@ retriever = BM25HF.load_from_hub(f"{user}/bm25s-mimiciv", load_corpus=True)
 query = "a cat is a feline"
 
 docs, scores = retriever.retrieve(bm25s.tokenize(query), k=2)
-print(docs)
+print(docs[0][1]['text'])

@@ -23,11 +23,6 @@ def main(
     df[eval_col] = None
 
     for index, row in tqdm(df.iterrows()):
-        
-
-        # delete when full train
-        if index == 100:
-            break
 
         output = row[model_name]
 
@@ -61,7 +56,7 @@ def main(
         df.at[index, eval_col] = result
         df.to_csv(os.path.join(save_path, file_name), index=False)
         time.sleep(0.15)
-        #break
+
 
 if __name__ == "__main__":
 	fire.Fire(main)

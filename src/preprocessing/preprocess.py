@@ -30,7 +30,6 @@ def main(
 
     mimiciv_filtered = mimiciv[mimiciv["subject_id"].isin(ehrnoteqa["patient_id"].values)]
     mimiciv_filtered.sort_values(by='charttime', ascending=True, inplace=True)
-    mimiciv.sort_values(by='charttime', ascending=True, inplace=True)
 
     print("Done...")
 
@@ -43,18 +42,6 @@ def main(
                 "\nChartdate : " + mimiciv_filtered['charttime'].str[:10] + \
                 "\n" + mimiciv_filtered['new_text']
     
-    print("Done...")
-
-    print("Processing original MIMIC-IV discharge summary: Removing excessive white spaces and Adding Meta Information to the note...")
-
-    mimiciv["new_text"] = mimiciv["text"].apply(lambda x : transform_string(x))
-    mimiciv['new_text'] = "Patient ID : " + mimiciv['subject_id'].astype(str) + \
-                "\nAdmission ID : " + mimiciv['hadm_id'].astype(str) + \
-                "\nChartdate : " + mimiciv['charttime'].str[:10] + \
-                "\n" + mimiciv['new_text']
-
-    mimiciv.to_csv('mimiciv_new.csv')
-
     print("Done...")
 
     print("Adding discharge summary to 'EHRNoteQA.jsonl'...")

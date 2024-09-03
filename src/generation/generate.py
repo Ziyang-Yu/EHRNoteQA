@@ -4,8 +4,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import fire, time
 from pathlib import Path
-from utils import get_prompt
-import deepspeed
+from utils import get_prompt, get_context
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 def main(
@@ -22,7 +21,7 @@ def main(
 		
 	else:
 		tokenizer = AutoTokenizer.from_pretrained(
-			f"{model_name}",
+			os.path.join(ckpt_dir, model_name),
 			cache_dir=os.path.join(ckpt_dir, model_name),
 			trust_remote_code=True,
 			local_files_only=True
@@ -32,37 +31,18 @@ def main(
 		for i in range(torch.cuda.device_count()):
 			total_mem = torch.cuda.get_device_properties(i).total_memory
 			total_mem_gib = total_mem / (1024 ** 3)
-			max_memory[i] = f"{total_mem_gib*0.4:.0f}GiB"
+			max_memory[i] = f"{total_mem_gib:.0f}GiB"
 
 		model = AutoModelForCausalLM.from_pretrained(
-			f"{model_name}",
+			os.path.join(ckpt_dir, model_name),
 			cache_dir=os.path.join(ckpt_dir, model_name),
-			#local_files_only=True,
+			local_files_only=True,
 			device_map="auto",
 			trust_remote_code=True,
-			#torch_dtype=torch.bfloat16,
-			max_memory=max_memory,
-			load_in_8bit=True
+			torch_dtype=torch.bfloat16,
+			max_memory=max_memory
 		)
-		#ds_config = {
-			#"fp16": {"enabled": True},
-			#"zero_optimization": {
-				#"stage": 3,
-				#"offload_optimizer": {
-				#	"device": "cpu"
-				#},
-				#"offload_param": {
-				#	"device": "cpu"
-				#}
-			#}
-		#}
-	#model = deepspeed.init_inference(
-	#	model,
-	#	#config=ds_config,
-	#	mp_size=1,  # Single GPU; increase if using multiple GPUs
-	#	#dtype=torch.int8,  # Match the dtype used in the model loading
-	#	#replace_with_kernel_inject=True  # Optional: Use DeepSpeed's optimized kernels
-	#)
+
 	data = pd.read_json(os.path.join(input_path, file_name), lines=True)
 
 	if model_name not in data:
@@ -70,7 +50,6 @@ def main(
 
 	count = 0
 	for idx, row in data.iterrows(): 
-		
 		start_time = time.time()
 		
 		num_notes = int(row['num_notes'])
@@ -81,20 +60,26 @@ def main(
 			if i < num_notes -1:
 				note = note + "\n\n"
 
+		context = get_context(note)
+
 		if eval_method == "openended":
-			sample = {"note": note, "question": row["question"]}
+			sample = {"note": note, "question": row["question"], "context": context}
 	
 		elif eval_method == "multichoice":
-			sample = {"note": note, "question": row["question"], "choice_a": row["choice_A"], "choice_b": row["choice_B"],
-						"choice_c": row["choice_C"], "choice_d": row["choice_D"], "choice_e": row["choice_E"]}
+			sample = {"note": note, "context": context, "question": row["question"], "choice_a": row["choice_A"], "choice_b": row["choice_B"],
+				"choice_c": row["choice_C"], "choice_d": row["choice_D"], "choice_e": row["choice_E"]}
 	
 		text = get_prompt(eval_method, model_name).format_map(sample)
+
+		#print(text)
+
+		#break
 
 		if "gpt" in model_name:
 			message = generate_prompt(text)
 			result = make_answer_gpt(message, model_name, 15)
 		else:
-			tokens = tokenizer.encode(text, truncation=True, return_tensors="pt").to("cuda")
+			tokens = tokenizer.encode(text, return_tensors="pt").to("cuda")
 
 			output = model.generate(
 				tokens,
